@@ -1,0 +1,93 @@
+/* KB — relationship rules. When every tag in `if` is present (and none in `not`),
+ * the rule's add / bias / ban / tags are applied. Tags come from every matched entry
+ * (its id, category and tags) plus derived facts: indoor/outdoor, day/night, person/animal/subject types.
+ */
+(function () {
+  const SC = globalThis.SC;
+  SC.defRules([
+    // ---- rain & water interplay ----
+    { if: 'wet urban outdoor', add: { detail: ['neon and headlights smeared across wet asphalt', 'ripples spreading through shallow puddles'], env: ['awnings dripping steadily onto the pavement'] }, tags: 'reflective' },
+    { if: 'wet urban night outdoor', add: { light: ['colored reflections from signs rippling in the puddles'], key: [['wet, reflective night light with signage glowing through the rain', 6]] } },
+    { if: 'rain india urban', add: { env: ['commuters hurrying past under black umbrellas', 'a chai stall steaming under a tarpaulin'] }, tags: 'monsoon' },
+    { if: 'rain india', not: 'monsoon', add: { atmo: ['humid monsoon air'] }, tags: 'monsoon' },
+    { if: 'wet person outdoor', add: { smotion: ['raindrops bead and run along {pos} skin'] } },
+    { if: 'rain indoor', add: { detail: ['rain streaking down the windowpanes', 'the grey light of a rainy day through the glass'], sound: ['rain pattering against the windows'] }, ban: { weatherAdj: 'all' } },
+    { if: 'snowy indoor', add: { detail: ['snow drifting past the frosted windows'] }, ban: { weatherAdj: 'all' } },
+    { if: 'storm indoor', add: { detail: ['rain lashing against the windows', 'lightning flickering beyond the glass'] }, ban: { weatherAdj: 'all' } },
+    { if: 'wet vehicle', add: { detail: ['water beading across the bodywork'] } },
+    { if: 'reflection water', add: { detail: ['a perfect mirror reflection on the water surface'] }, bias: { comp: 'symmetry:3' } },
+
+    // ---- night / light interplay ----
+    { if: 'night urban outdoor', add: { env: ['lit windows scattered across the buildings'], light: ['glowing shop signs and passing headlights'] }, bias: { palette: 'night-blue:2, teal-orange:1' } },
+    { if: 'deepnight nature outdoor', not: 'fire glow moonlit', add: { light: ['a faint glimmer of starlight'] } },
+    { if: 'night indoor', not: 'horror clinical fluorescent', add: { light: ['warm practical lamps casting pools of light'] } },
+    { if: 'night stars', add: { sky: ['a dense field of stars glitters overhead'] } },
+    { if: 'neon night', bias: { palette: 'neon colors:3' } },
+    { if: 'fire night', add: { light: ['warm firelight flickering across faces and surfaces'] }, bias: { palette: 'warm:2, high-contrast:1' } },
+    { if: 'glow night', add: { detail: ['points of warm light glowing against the darkness'] } },
+    { if: 'golden-hour person', add: { subj: ['warm light catching the edges of {pos} hair'] } },
+    { if: 'sunset water', add: { detail: ['the sun’s reflection shimmering in a long path across the water'] } },
+    { if: 'sunrise mountain', add: { sky: ['first light ignites the highest peaks in pink and gold'] } },
+    { if: 'dawn forest', add: { light: ['god rays slanting through morning mist between the trunks'] } },
+    { if: 'forest golden-hour', add: { light: ['golden shafts of light piercing the canopy'] } },
+    { if: 'midday desert', add: { atmo: ['heat haze warping the horizon'] } },
+    { if: 'fog urban', add: { detail: ['streetlights haloed in the fog'] } },
+    { if: 'fog forest', add: { env: ['trees fading into pale silhouettes in the fog'] } },
+    { if: 'mist water', add: { atmo: ['mist curling low across the water'] } },
+
+    // ---- place-specific combos ----
+    { if: 'mumbai coastal outdoor', not: 'indoor', add: { env: ['the Marine Drive sea wall with spray bursting over it'] }, w: 0.8 },
+    { if: 'ghat night', add: { light: ['the glow of evening aarti lamps on the water'] } },
+    { if: 'temple india', add: { detail: ['marigold garlands and a smear of vermilion on the stone'] } },
+    { if: 'japan urban night', add: { env: ['red paper lanterns glowing outside an izakaya'] } },
+    { if: 'market india', add: { env: ['pyramids of turmeric and chili powder in steel bowls', 'brass vessels and bangles glinting in the light'] } },
+    { if: 'street india', add: { env: ['an auto-rickshaw puttering past'] } },
+    { if: 'beach tropical', add: { env: ['coconut palms leaning over the sand'] } },
+    { if: 'cold outdoor person', add: { subj: ['{pos} breath fogging in the cold air'] } },
+    { if: 'hot outdoor person day', add: { subj: ['a light sheen of sweat on {pos} skin'] } },
+    { if: 'underwater person', add: { subj: ['{pos} hair drifting weightlessly around {pos} face', 'a trail of silver bubbles rising from {pos} lips'] } },
+    { if: 'astronaut cosmic', add: { subj: ['the visor reflecting the planet and stars'] } },
+    { if: 'crowd', bias: { shot: 'wide shot:2' } },
+    { if: 'nostalgic residential', add: { detail: ['faded family details — a swing seat, a worn doormat, chipped paint on the gate'] } },
+    { if: 'departure person', add: { detail: ['a packed suitcase at {pos} side'] }, bias: { comp: 'negative-space:2' } },
+    { if: 'departure nostalgic', add: { atmo: ['a quiet, bittersweet stillness'] } },
+    { if: 'studio', ban: { weatherAdj: 'all' }, bias: { comp: 'centered:3' } },
+    { if: 'product', not: 'person', bias: { place: 'studio:3', comp: 'centered:3', shot: 'medium shot:2', angle: 'eye level:2', dof: 'bokeh:1' }, add: { detail: ['a subtle reflection on a glossy surface beneath the product'] } },
+    { if: 'food', not: 'person', bias: { shot: 'close-up:3', angle: 'high angle:2', place: 'tabletop:3', dof: 'bokeh:2' }, add: { detail: ['fresh garnish and scattered crumbs', 'a wisp of steam rising'] } },
+    { if: 'food luxury', add: { detail: ['fine plating on dark ceramic'] } },
+
+    // ---- subject-type combos ----
+    { if: 'insect', bias: { shot: 'macro:4', dof: 'bokeh:3' }, add: { detail: ['dew droplets magnifying tiny details'] } },
+    { if: 'small animal', bias: { angle: 'eye level:2, worms-eye:1' } },
+    { if: 'big animal', bias: { angle: 'low angle:2' } },
+    { if: 'predator', bias: { lens: '400mm telephoto:3' } },
+    { if: 'wild animal', not: 'fantasy', bias: { style: 'wildlife photography:1' } },
+    { if: 'bird fly', bias: { move: 'aerial flyover:3' } },
+    { if: 'vehicle fast', bias: { move: 'tracking:4', comp: 'diagonal:2' }, add: { detail: ['motion-blurred background streaking past'] } },
+    { if: 'vehicle space', not: 'person', bias: { shot: 'extreme wide shot:3, wide shot:2', angle: 'low angle:2' } },
+    { if: 'flying vehicle', add: { sky: ['open sky stretches away in every direction'] } },
+    { if: 'robot', add: { texture: ['scuffed paint, exposed wiring and precise mechanical joints'] } },
+    { if: 'fantasy magic', add: { atmo: ['drifting motes of glowing magical light'] } },
+    { if: 'horror', bias: { palette: 'desaturated:2' }, add: { atmo: ['a thin, creeping mist'] } },
+    { if: 'royal', add: { detail: ['gold filigree and rich brocade catching the light'] } },
+    { if: 'warrior', add: { subj: ['battle scars and dust on {pos} armor'] } },
+    { if: 'music', add: { detail: ['warm bokeh from stage lights in the background'] } },
+    { if: 'festive india', add: { detail: ['marigold garlands and strings of warm fairy lights'] } },
+    { if: 'romance', add: { detail: ['soft bokeh orbs glowing in the background'] } },
+    { if: 'couple', bias: { move: 'orbit:2' } },
+
+    // ---- mood/style combos ----
+    { if: 'lonely urban', add: { env: ['empty stretches of pavement around the figure'] } },
+    { if: 'lonely nature', add: { env: ['a vast, empty landscape stretching away on every side'] } },
+    { if: 'melancholy wet', add: { atmo: ['a heavy, quiet dampness'] } },
+    { if: 'cozy indoor', add: { detail: ['a steaming mug and a knitted throw nearby'] } },
+    { if: 'epic outdoor', add: { atmo: ['towering clouds adding scale'] } },
+    { if: 'bw', ban: { palette: 'warm, cool, teal-orange, vibrant, pastel, earthy, neon colors, golden, moody-blue, sepia, jewel, lavender-haze, crimson-black, ice, forest, sunset, night-blue, candy, muted, desaturated' } },
+    { if: 'scifi urban', add: { env: ['drones and holographic signage overhead'] } },
+    { if: 'decay urban', add: { env: ['shattered windows and weeds breaking through concrete'] } },
+    { if: 'overgrown', bias: { palette: 'forest:2' } },
+    { if: 'spring nature', add: { detail: ['fresh blossoms and bright new leaves'] } },
+    { if: 'autumn nature', add: { detail: ['a carpet of fallen leaves in rust and gold'] } },
+    { if: 'winter outdoor', add: { detail: ['bare branches traced with frost'] } },
+  ]);
+})();

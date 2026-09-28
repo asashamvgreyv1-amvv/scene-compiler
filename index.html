@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Scene Compiler" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#12110f" media="(prefers-color-scheme: dark)" />
+  <title>Scene Compiler</title>
+  <meta name="description" content="Rule-based prompt compiler: keywords in, detailed image and video prompts out. Runs fully offline, no AI." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c2410c'/%3E%3Cpath d='M9 11h14M9 16h10M9 21h14' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css?v=2026.09.27-1427" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Scene Compiler</h1>
+        <p class="tag">Keywords in, production-ready image &amp; video prompts out. Rule-based, runs offline, no AI.</p>
+      </div>
+    </div>
+    <div class="top-acts">
+      <button class="ghost" id="resetBtn" title="Clear keywords, characters, scene and settings">↺ Reset all</button>
+      <button class="ghost" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- LEFT: input + controls + scene spec -->
+    <section class="col left">
+      <div class="card input-card">
+        <label for="kw" class="lbl">Keywords</label>
+        <textarea id="kw" rows="3" spellcheck="false" placeholder="e.g. Indian woman, rain, Mumbai, cinematic, walking"></textarea>
+        <div class="chips" id="chips" aria-live="polite"></div>
+        <details class="ex"><summary>Try an example</summary><div class="examples" id="examples"></div></details>
+      </div>
+
+      <details class="card builder" open>
+        <summary><h2>Characters</h2><b class="cnt-s"></b><span class="hint">women &amp; men, each fully customisable</span></summary>
+        <div id="castBox"></div>
+      </details>
+
+      <details class="card builder">
+        <summary><h2>Scene</h2><b class="cnt-s"></b><span class="hint">overrides matching keywords</span></summary>
+        <div id="sceneBox"></div>
+      </details>
+
+      <div class="card controls">
+        <div class="row">
+          <span class="lbl">Mode</span>
+          <div class="seg" id="modeSeg">
+            <button data-v="image">Image</button><button data-v="video">Video</button>
+          </div>
+        </div>
+        <div class="row">
+          <span class="lbl">Target</span>
+          <div class="seg wrap" id="targetSeg"></div>
+        </div>
+        <div class="row">
+          <span class="lbl">Detail</span>
+          <div class="seg" id="detailSeg">
+            <button data-v="1">Concise</button><button data-v="2">Standard</button><button data-v="3">Rich</button>
+          </div>
+        </div>
+        <div class="row split">
+          <label class="field"><span class="lbl">Aspect</span>
+            <select id="aspect">
+              <option value="auto">Auto</option><option>16:9</option><option>21:9</option><option>3:2</option><option>4:3</option>
+              <option>1:1</option><option>4:5</option><option>2:3</option><option>9:16</option>
+            </select>
+          </label>
+          <label class="field vid-only"><span class="lbl">Duration</span>
+            <select id="duration"><option value="5">5 s</option><option value="8" selected>8 s</option><option value="10">10 s</option><option value="15">15 s</option></select>
+          </label>
+          <label class="field"><span class="lbl">Seed</span>
+            <span class="seed"><input id="seed" type="number" min="1" max="99999" /><button class="ghost sm" id="dice" title="New seed">🎲</button></span>
+          </label>
+        </div>
+        <label class="check vid-only"><input type="checkbox" id="audio" checked /> Include the audio prompt (dialogue, music, ambience)</label>
+        <label class="check vid-only"><input type="checkbox" id="i2v" /> Animate a reference image (image-to-video): subtle motion, stable scene</label>
+      </div>
+
+      <div class="card spec">
+        <div class="card-h">
+          <h2>Scene spec</h2>
+          <span class="hint">🔒 from your keywords · ↻ reroll an inferred choice</span>
+        </div>
+        <div id="specRows" class="rows"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: output -->
+    <section class="col right">
+      <div class="card out">
+        <div class="card-h">
+          <h2 id="outTitle">Prompt</h2>
+          <div class="acts">
+            <span class="meta" id="meta"></span>
+            <button class="ghost" id="rephrase" title="Same scene, different wording">↻ Rephrase</button>
+            <button class="primary" id="copyBtn">Copy</button>
+          </div>
+        </div>
+        <div id="notes" class="notes" hidden></div>
+        <div id="prompt" class="prompt" tabindex="0"></div>
+        <div class="neg">
+          <div class="card-h sub">
+            <h3>Negative prompt</h3>
+            <button class="ghost sm" id="copyNeg">Copy</button>
+          </div>
+          <div id="negative" class="negtext"></div>
+        </div>
+        <div class="neg" id="audioWrap" hidden>
+          <div class="card-h sub">
+            <h3>Audio prompt</h3>
+            <button class="ghost sm" id="copyAudio">Copy</button>
+          </div>
+          <div id="audioText" class="negtext"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>Variations</h2>
+          <button class="ghost" id="varBtn">Generate 3</button>
+        </div>
+        <div id="vars" class="vars"><p class="empty">Same keywords, different seeds: alternate lighting, framing, and details.</p></div>
+      </div>
+
+      <details class="card">
+        <summary><h2>Scene JSON</h2><span class="hint">for ComfyUI or scripting</span></summary>
+        <pre id="json" class="json"></pre>
+      </details>
+
+      <details class="card" id="histCard">
+        <summary><h2>History</h2></summary>
+        <div id="hist" class="hist"></div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Deterministic: the same keywords + seed always give the same prompt. Everything runs in this page; nothing is sent anywhere. <span id="ver">v2026.09.27-1427</span>
+  </footer>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="js/engine/util.js?v=2026.09.27-1427"></script>
+  <script src="js/engine/lexicon.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/beings.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/things.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/places.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/regions.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/atmosphere.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/moods.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/camera.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/styles.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/modifiers.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/actions.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/rules.js?v=2026.09.27-1427"></script>
+  <script src="js/kb/wardrobe.js?v=2026.09.27-1427"></script>
+  <script src="js/engine/parse.js?v=2026.09.27-1427"></script>
+  <script src="js/engine/character.js?v=2026.09.27-1427"></script>
+  <script src="js/engine/infer.js?v=2026.09.27-1427"></script>
+  <script src="js/engine/render.js?v=2026.09.27-1427"></script>
+  <script src="js/builder/options.js?v=2026.09.27-1427"></script>
+  <script src="js/builder/builder.js?v=2026.09.27-1427"></script>
+  <script src="js/app.js?v=2026.09.27-1427"></script>
+</body>
+</html>
